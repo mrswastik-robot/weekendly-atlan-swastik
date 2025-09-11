@@ -2,17 +2,18 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, ChevronRight, ExternalLink, Github } from 'lucide-react';
+import { ArrowRight, ChevronRight, Github, Calendar, DollarSign, Heart, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import Link from 'next/link';
 
-export default function GradientHero() {
+export default function LandingPage() {
   return (
-    <div className="bg-background relative w-full overflow-hidden">
-      {/* Background gradient */}
+    <div className="relative w-full overflow-hidden min-h-screen">
+      {/* Subtle accent elements */}
       <div className="absolute inset-0 z-0">
-        <div className="from-primary/20 via-background to-background absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))]"></div>
-        <div className="bg-primary/5 absolute top-0 left-1/2 -z-10 h-[1000px] w-[1000px] -translate-x-1/2 rounded-full blur-3xl"></div>
+        <div className="bg-primary/3 absolute top-0 left-1/2 -z-10 h-[800px] w-[800px] -translate-x-1/2 rounded-full blur-3xl"></div>
       </div>
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#27262640_1px,transparent_1px),linear-gradient(to_bottom,#27262640_1px,transparent_1px)] bg-[size:16px_16px] opacity-15"></div>
 
@@ -30,7 +31,7 @@ export default function GradientHero() {
                 New
               </span>
               <span className="text-muted-foreground">
-                Introducing weekend planning app
+                Introducing weekend planning with budget tracking
               </span>
               <ChevronRight className="text-muted-foreground ml-1 h-4 w-4" />
             </div>
@@ -41,9 +42,9 @@ export default function GradientHero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="from-primary/10 via-foreground/85 to-foreground/50 bg-gradient-to-tl bg-clip-text text-center text-4xl tracking-tighter text-balance text-transparent sm:text-5xl md:text-6xl lg:text-7xl"
+            className="from-primary/10 via-foreground/85 to-foreground/50 bg-gradient-to-tl bg-clip-text text-center text-4xl tracking-tighter text-balance text-transparent sm:text-5xl md:text-6xl lg:text-7xl pb-1"
           >
-            Build beautiful plans with your beautiful weekends:)
+            Plan Beautiful Weekends with Smart Budgeting
           </motion.h1>
 
           {/* Description */}
@@ -53,10 +54,34 @@ export default function GradientHero() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-muted-foreground mx-auto mt-6 max-w-2xl text-center text-lg"
           >
-            A modern visually stunning web-app designed to help our fellow corporate
-            fellas to do weekend planning with minimal effort. Fully customizable,
-            responsive, and sharable with friends.
+            A modern weekend planning app designed to help you create memorable experiences 
+            while staying within budget. Fully customizable, responsive, and shareable with friends.
           </motion.p>
+
+          {/* Feature highlights */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.25 }}
+            className="mt-8 flex flex-wrap justify-center gap-4"
+          >
+            <Badge variant="outline" className="flex items-center gap-2 px-3 py-1">
+              <DollarSign className="h-4 w-4 text-green-600" />
+              Smart Budget Tracking
+            </Badge>
+            <Badge variant="outline" className="flex items-center gap-2 px-3 py-1">
+              <Heart className="h-4 w-4 text-red-600" />
+              Mood-Based Activities
+            </Badge>
+            <Badge variant="outline" className="flex items-center gap-2 px-3 py-1">
+              <Calendar className="h-4 w-4 text-blue-600" />
+              Visual Scheduling
+            </Badge>
+            <Badge variant="outline" className="flex items-center gap-2 px-3 py-1">
+              <Sparkles className="h-4 w-4 text-purple-600" />
+              40+ Activities
+            </Badge>
+          </motion.div>
 
           {/* CTA Buttons */}
           <motion.div
@@ -65,16 +90,18 @@ export default function GradientHero() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
           >
-            <Button
-              size="lg"
-              className="group bg-primary text-primary-foreground hover:shadow-primary/30 relative overflow-hidden rounded-full px-6 shadow-lg transition-all duration-300"
-            >
-              <span className="relative z-10 flex items-center">
-                Get Started
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-              </span>
-              <span className="from-primary via-primary/90 to-primary/80 absolute inset-0 z-0 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100"></span>
-            </Button>
+            <Link href="/planner">
+              <Button
+                size="lg"
+                className="group bg-primary text-primary-foreground hover:shadow-primary/30 relative overflow-hidden rounded-full px-6 shadow-lg transition-all duration-300"
+              >
+                <span className="relative z-10 flex items-center">
+                  Get Started
+                  <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                </span>
+                <span className="from-primary via-primary/90 to-primary/80 absolute inset-0 z-0 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100"></span>
+              </Button>
+            </Link>
 
             <Button
               variant="outline"
@@ -82,11 +109,11 @@ export default function GradientHero() {
               className="border-border bg-background/50 flex items-center gap-2 rounded-full backdrop-blur-sm"
             >
               <Github className="h-4 w-4" />
-              Star on GitHub
+              View Source
             </Button>
           </motion.div>
 
-          {/* Feature Image */}
+          {/* Feature Preview */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -106,16 +133,68 @@ export default function GradientHero() {
                   <div className="h-3 w-3 rounded-full bg-green-500"></div>
                 </div>
                 <div className="bg-background/50 text-muted-foreground mx-auto flex items-center rounded-md px-3 py-1 text-xs">
-                  https://your-awesome-app.com
+                  weekendly.app/planner
                 </div>
               </div>
-              <div className="relative">
-                <img
-                  src="https://i.postimg.cc/0yk8Vz7t/dashboard.webp"
-                  alt="Dashboard Preview"
-                  className="w-full"
-                />
-                <div className="from-background absolute inset-0 bg-gradient-to-t to-transparent opacity-0"></div>
+              
+              {/* Mock preview of the app */}
+              <div className="p-8 bg-gradient-to-br from-background to-muted/20">
+                <div className="grid md:grid-cols-3 gap-6">
+                  {/* Activity Browser Preview */}
+                  <div className="md:col-span-2 space-y-4">
+                    <h3 className="text-lg font-semibold mb-4">🎯 Browse Activities</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { name: "Weekend Brunch", cost: "$25", category: "Food" },
+                        { name: "Nature Hiking", cost: "Free", category: "Outdoor" },
+                        { name: "Movie Marathon", cost: "$15", category: "Indoor" },
+                        { name: "Yoga Class", cost: "$18", category: "Wellness" }
+                      ].map((activity, i) => (
+                        <Card key={i} className="hover:shadow-md transition-shadow">
+                          <CardContent className="p-3">
+                            <div className="text-sm font-medium">{activity.name}</div>
+                            <div className="text-xs text-muted-foreground">{activity.category}</div>
+                            <div className="text-sm font-medium text-green-600 mt-1">{activity.cost}</div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Schedule Preview */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold mb-4">📅 Weekend Schedule</h3>
+                    <Card>
+                      <CardContent className="p-3">
+                        <div className="text-sm font-medium mb-2">Saturday</div>
+                        <div className="space-y-2 text-xs">
+                          <div className="flex justify-between">
+                            <span>Brunch</span>
+                            <span className="text-green-600">$25</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Hiking</span>
+                            <span className="text-green-600">Free</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-3">
+                        <div className="text-sm font-medium mb-2">Budget Summary</div>
+                        <div className="space-y-1 text-xs">
+                          <div className="flex justify-between">
+                            <span>Total:</span>
+                            <span className="font-medium">$25</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-1.5">
+                            <div className="bg-green-500 h-1.5 rounded-full w-1/4"></div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -127,6 +206,45 @@ export default function GradientHero() {
             <div className="border-border/40 bg-background/80 absolute right-12 -bottom-6 h-10 w-10 rounded-lg border p-2 shadow-lg backdrop-blur-md">
               <div className="h-full w-full rounded-md bg-green-500/20"></div>
             </div>
+          </motion.div>
+
+          {/* Features Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.7 }}
+            className="mt-24 grid md:grid-cols-2 lg:grid-cols-4 gap-8"
+          >
+            {[
+              {
+                icon: <DollarSign className="h-8 w-8 text-green-600" />,
+                title: "Smart Budget Tracking",
+                description: "Track costs in real-time with visual budget indicators and spending alerts."
+              },
+              {
+                icon: <Heart className="h-8 w-8 text-red-600" />,
+                title: "Mood-Based Planning",
+                description: "Filter activities by mood - happy, relaxed, energetic, or peaceful."
+              },
+              {
+                icon: <Calendar className="h-8 w-8 text-blue-600" />,
+                title: "Visual Scheduling",
+                description: "Drag and drop activities into your weekend timeline with time management."
+              },
+              {
+                icon: <Sparkles className="h-8 w-8 text-purple-600" />,
+                title: "40+ Activities",
+                description: "Curated collection of weekend activities across food, outdoor, indoor, social, and wellness."
+              }
+            ].map((feature, i) => (
+              <Card key={i} className="text-center p-6 hover:shadow-lg transition-shadow">
+                <CardContent className="space-y-4">
+                  <div className="flex justify-center">{feature.icon}</div>
+                  <h3 className="text-lg font-semibold">{feature.title}</h3>
+                  <p className="text-sm text-muted-foreground">{feature.description}</p>
+                </CardContent>
+              </Card>
+            ))}
           </motion.div>
         </div>
       </div>
