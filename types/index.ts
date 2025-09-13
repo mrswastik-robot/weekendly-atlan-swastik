@@ -49,3 +49,17 @@ export type CategoryType = Activity['category'];
 export type MoodType = Activity['mood'];
 export type CostType = Activity['costType'];
 export type DayType = 'saturday' | 'sunday';
+
+export type TimePreference = 'morning' | 'afternoon' | 'evening' | 'auto';
+
+export interface TimeWindow {
+  start: string;
+  end: string;
+  label: string;
+  icon: string;
+}
+
+export interface SchedulingPreference {
+  day: DayType;
+  timePreference: TimePreference;
+}

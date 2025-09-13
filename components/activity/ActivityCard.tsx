@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useDraggable } from '@dnd-kit/core';
 import { 
-  Clock, 
   DollarSign, 
   Plus, 
   Heart, 
@@ -25,6 +25,7 @@ interface ActivityCardProps {
   isSelected?: boolean;
   showAddButton?: boolean;
   className?: string;
+  isDraggable?: boolean;
 }
 
 const moodIcons = {
@@ -59,10 +60,21 @@ const categoryColors = {
 export function ActivityCard({ 
   activity, 
   onAddToSchedule, 
-  isSelected = false,
+  isSelected = false, 
   showAddButton = true,
-  className 
+  className,
+  isDraggable = true
 }: ActivityCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    isDragging,
+  } = useDraggable({
+    id: activity.id,
+    disabled: !isDraggable,
+  });
   const MoodIcon = moodIcons[activity.mood];
 
   const formatDuration = (minutes: number) => {
@@ -88,23 +100,39 @@ export function ActivityCard({
     return labels[costType];
   };
 
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+  } : undefined;
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      whileHover={{ y: -2 }}
+      whileHover={{ y: isDragging ? 0 : -2 }}
       transition={{ duration: 0.2 }}
       className={cn(className)}
     >
       <Card 
+        ref={setNodeRef}
+        {...(isDraggable ? { ...attributes, ...listeners } : {})}
+        data-draggable={isDraggable}
         className={cn(
-          'h-full border-l-4 transition-all duration-200 hover:shadow-lg cursor-pointer',
+          'h-full border-l-4 transition-all duration-200 hover:shadow-lg',
+          isDragging && 'opacity-50 rotate-2 scale-105 z-50 dragging',
+          isDraggable && 'cursor-grab active:cursor-grabbing select-none',
+          !isDraggable && 'cursor-pointer',
           categoryColors[activity.category],
           isSelected && 'ring-2 ring-primary shadow-lg',
-          'group'
+          'group relative'
         )}
+        style={{
+          ...style,
+          userSelect: isDraggable ? 'none' : 'auto',
+          WebkitUserSelect: isDraggable ? 'none' : 'auto',
+        } as React.CSSProperties}
       >
-        <CardHeader className="pb-3">
+
+        <CardHeader className="pb-3 relative z-10">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <h3 className="font-semibold text-sm leading-tight mb-2 line-clamp-2">
@@ -119,17 +147,26 @@ export function ActivityCard({
             </div>
             
             {showAddButton && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              <div 
+                className="relative z-20" 
+                style={{ pointerEvents: 'auto' }}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
+                  console.log('Add button clicked for:', activity.name); // Debug log
                   onAddToSchedule?.(activity);
                 }}
               >
-                <Plus className="h-4 w-4" />
-              </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             )}
           </div>
 
@@ -155,7 +192,7 @@ export function ActivityCard({
           </div>
         </CardHeader>
 
-        <CardContent className="pt-0">
+        <CardContent className="pt-0 relative z-10">
           {/* Duration and Cost Info */}
           <div className="space-y-2">
             {/* Duration */}
@@ -195,17 +232,26 @@ export function ActivityCard({
 
           {/* Action Button for Mobile */}
           {showAddButton && (
-            <Button
-              size="sm"
-              className="w-full mt-3 md:hidden"
+            <div 
+              className="relative z-20 mt-3 md:hidden" 
+              style={{ pointerEvents: 'auto' }}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+              }}
               onClick={(e) => {
                 e.stopPropagation();
+                console.log('Mobile add button clicked for:', activity.name); // Debug log
                 onAddToSchedule?.(activity);
               }}
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Add to Schedule
-            </Button>
+              <Button
+                size="sm"
+                className="w-full"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add to Schedule
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
