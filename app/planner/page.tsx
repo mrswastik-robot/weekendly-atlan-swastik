@@ -3,30 +3,56 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
+  DndContext, 
+  DragEndEvent, 
+  DragOverlay, 
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  rectIntersection
+} from '@dnd-kit/core';
+import { arrayMove } from '@dnd-kit/sortable';
+import { 
   Calendar, 
   DollarSign, 
-  Heart, 
-  Sparkles, 
-  Clock,
-  ArrowRight,
-  Plus
+  Sparkles
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ActivityGrid } from '@/components/activity/ActivityGrid';
+import { WeekendSchedule } from '@/components/schedule/WeekendSchedule';
+import { ActivityCard } from '@/components/activity/ActivityCard';
 import useWeekendStore from '@/stores/weekendStore';
 import activities from '@/data/activities';
+import type { Activity, ScheduledActivity } from '@/types';
 
 export default function WeekendPlanner() {
   const [mounted, setMounted] = useState(false);
+  const [draggedItem, setDraggedItem] = useState<Activity | ScheduledActivity | null>(null);
+  
+  // Configure sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px drag distance before starting drag
+        delay: 50, // 50ms delay before starting drag
+        tolerance: 3,
+      },
+    })
+  );
+  
   const { 
     setActivities, 
     createNewPlan, 
     currentPlan,
     getTotalEstimatedCost,
     getBudgetStatus,
-    getScheduleForDay
+    getScheduleForDay,
+    addActivityToSchedule,
+    moveActivity,
+    reorderActivities,
+    getNextAvailableTime
   } = useWeekendStore();
 
   useEffect(() => {
@@ -49,6 +75,144 @@ export default function WeekendPlanner() {
   const totalCost = getTotalEstimatedCost();
   const budgetStatus = getBudgetStatus();
 
+  // Handle drag and drop across the entire planner
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const activeId = String(active.id);
+    
+    console.log('Drag Start - Active ID:', activeId); // Debug log
+    
+    // Check if it's a scheduled activity (they have 'scheduled-' prefix)
+    if (activeId.startsWith('scheduled-')) {
+      const scheduledActivity = [...saturdayActivities, ...sundayActivities].find(
+        a => a.id === activeId
+      );
+      
+      if (scheduledActivity) {
+        console.log('Dragging scheduled activity:', scheduledActivity.name);
+        setDraggedItem(scheduledActivity);
+        return;
+      }
+    }
+    
+    // It's an activity from the grid (original activities)
+    const activity = activities.find(a => a.id === activeId);
+    if (activity) {
+      console.log('Dragging activity from grid:', activity.name);
+      setDraggedItem(activity);
+    }
+  };
+
+  // Helper function to recalculate activity times in order
+  const recalculateActivityTimes = (activities: ScheduledActivity[]): ScheduledActivity[] => {
+    if (activities.length === 0) return activities;
+    
+    // Start from 9:00 AM
+    let currentTime = new Date();
+    currentTime.setHours(9, 0, 0, 0);
+    
+    return activities.map((activity) => {
+      const startTime = `${currentTime.getHours().toString().padStart(2, '0')}:${currentTime.getMinutes().toString().padStart(2, '0')}`;
+      
+      // Calculate end time
+      const endDate = new Date(currentTime.getTime() + activity.duration * 60000);
+      const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+      
+      // Set next start time (end time + 30 minutes gap)
+      currentTime = new Date(endDate.getTime() + 30 * 60000);
+      
+      return {
+        ...activity,
+        startTime,
+        endTime
+      };
+    });
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over || !draggedItem) {
+      setDraggedItem(null);
+      return;
+    }
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    console.log('Global Drag End:', { activeId, overId, draggedItem });
+
+    // Check if dragging from ActivityGrid to schedule
+    const isFromActivityGrid = !activeId.startsWith('scheduled-');
+    
+    if (isFromActivityGrid) {
+      // Dragging from ActivityGrid to schedule
+      if (overId === 'saturday-droppable' || overId === 'sunday-droppable') {
+        const toDay = overId.replace('-droppable', '') as 'saturday' | 'sunday';
+        console.log('Adding activity from grid to', toDay);
+        addActivityToSchedule(draggedItem as Activity, toDay, '');
+      } else {
+        console.log('Drop target not recognized for grid activity:', overId);
+      }
+    } else {
+      // Dragging within schedule (reordering or moving between days)
+      const scheduledActivity = draggedItem as ScheduledActivity;
+      const fromDay = scheduledActivity.day;
+
+      console.log('Dragging scheduled activity from', fromDay, 'to', overId);
+
+      // Check if we're dropping on a droppable area (day column)
+      if (overId === 'saturday-droppable' || overId === 'sunday-droppable') {
+        const toDay = overId.replace('-droppable', '') as 'saturday' | 'sunday';
+        
+        if (fromDay !== toDay) {
+          // Moving between days - use next available time
+          console.log('Moving between days:', fromDay, '->', toDay);
+          const nextTime = getNextAvailableTime(toDay);
+          moveActivity(activeId, fromDay, toDay, nextTime);
+        } else {
+          console.log('Dropped on same day, no action needed');
+        }
+      } else {
+        // Check if dropping on another scheduled activity (reordering)
+        const targetActivity = [...saturdayActivities, ...sundayActivities].find(
+          a => a.id === overId
+        );
+        
+        if (targetActivity && targetActivity.day === fromDay && activeId !== overId) {
+          // Reordering within same day
+          console.log('Reordering within day:', fromDay, 'from', activeId, 'to', overId);
+          const dayActivities = fromDay === 'saturday' ? saturdayActivities : sundayActivities;
+          const oldIndex = dayActivities.findIndex(a => a.id === activeId);
+          const newIndex = dayActivities.findIndex(a => a.id === overId);
+          
+          console.log('Reorder indices:', { oldIndex, newIndex, dayActivities: dayActivities.map(a => a.id) });
+          
+          if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+            const reorderedActivities = arrayMove(dayActivities, oldIndex, newIndex);
+            console.log('Performing reorder - before:', dayActivities.map(a => a.id));
+            console.log('Performing reorder - after:', reorderedActivities.map(a => a.id));
+            
+            // Recalculate times based on new order
+            const recalculatedActivities = recalculateActivityTimes(reorderedActivities);
+            console.log('Recalculated times:', recalculatedActivities.map(a => ({ id: a.id, time: a.startTime })));
+            
+            reorderActivities(fromDay, recalculatedActivities);
+          }
+        } else if (targetActivity && targetActivity.day !== fromDay) {
+          // Moving to different day via activity - use next available time
+          console.log('Moving to different day via activity:', fromDay, '->', targetActivity.day);
+          const nextTime = getNextAvailableTime(targetActivity.day);
+          moveActivity(activeId, fromDay, targetActivity.day, nextTime);
+        } else {
+          console.log('No valid drop target found for scheduled activity');
+        }
+      }
+    }
+
+    setDraggedItem(null);
+  };
+
   const budgetStatusConfig = {
     under: { color: 'text-green-600 bg-green-50', label: 'Under Budget' },
     near: { color: 'text-orange-600 bg-orange-50', label: 'Near Budget' },
@@ -56,14 +220,16 @@ export default function WeekendPlanner() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <DndContext
+      sensors={sensors}
+      collisionDetection={rectIntersection}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
       {/* Hero Section */}
       <div className="relative">
-        <div className="absolute inset-0 z-0">
-          <div className="bg-primary/5 absolute top-0 left-1/2 -z-10 h-[600px] w-[600px] -translate-x-1/2 rounded-full blur-3xl"></div>
-        </div>
         
-        <div className="relative z-10 container mx-auto px-4 py-16">
+        <div className="container mx-auto px-4 py-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -159,72 +325,9 @@ export default function WeekendPlanner() {
                 Weekend Schedule
               </h2>
               
+              {/* Drag & Drop Weekend Schedule */}
               <div className="space-y-4">
-                {/* Saturday */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center justify-between">
-                      Saturday
-                      <Badge variant="outline" className="text-xs">
-                        {saturdayActivities.length} activities
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {saturdayActivities.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Plus className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">No activities planned</p>
-                        <p className="text-xs">Select activities to add them here</p>
-                      </div>
-                    ) : (
-                      saturdayActivities.map((activity) => (
-                        <div key={activity.id} className="flex items-center gap-3 p-2 border rounded-lg">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <div className="flex-1">
-                            <div className="font-medium text-sm">{activity.name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {activity.startTime} • ${activity.cost}
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Sunday */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center justify-between">
-                      Sunday
-                      <Badge variant="outline" className="text-xs">
-                        {sundayActivities.length} activities
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {sundayActivities.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Plus className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">No activities planned</p>
-                        <p className="text-xs">Select activities to add them here</p>
-                      </div>
-                    ) : (
-                      sundayActivities.map((activity) => (
-                        <div key={activity.id} className="flex items-center gap-3 p-2 border rounded-lg">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <div className="flex-1">
-                            <div className="font-medium text-sm">{activity.name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {activity.startTime} • ${activity.cost}
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </CardContent>
-                </Card>
+                <WeekendSchedule />
 
                 {/* Budget Summary */}
                 {currentPlan && (
@@ -269,6 +372,31 @@ export default function WeekendPlanner() {
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Global Drag Overlay */}
+      <DragOverlay>
+        {draggedItem && (
+          <div className="rotate-6 opacity-95 transform scale-105">
+            {'day' in draggedItem ? (
+              // Rendering scheduled activity
+              <div className="bg-white border rounded-lg p-3 shadow-lg">
+                <div className="font-medium text-sm">{draggedItem.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  {draggedItem.startTime} • ${draggedItem.cost}
+                </div>
+              </div>
+            ) : (
+              // Rendering activity from grid
+              <ActivityCard 
+                activity={draggedItem} 
+                onAddToSchedule={() => {}} 
+                showAddButton={false}
+                isDraggable={false}
+              />
+            )}
+          </div>
+        )}
+      </DragOverlay>
+    </DndContext>
   );
 }

@@ -21,8 +21,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { ActivityCard } from './ActivityCard';
+import { DaySelectionModal } from '@/components/schedule/DaySelectionModal';
 import useWeekendStore from '@/stores/weekendStore';
-import type { Activity, CategoryType, MoodType, CostType } from '@/types';
+import type { Activity, CategoryType, MoodType, CostType, DayType, TimePreference } from '@/types';
 import { cn } from '@/lib/utils';
 
 interface ActivityGridProps {
@@ -54,6 +55,8 @@ const costConfig = {
 
 export function ActivityGrid({ onSelectActivity, className }: ActivityGridProps) {
   const [showFilters, setShowFilters] = useState(false);
+  const [showDayModal, setShowDayModal] = useState(false);
+  const [selectedActivityForScheduling, setSelectedActivityForScheduling] = useState<Activity | null>(null);
   
   const {
     getFilteredActivities,
@@ -66,7 +69,8 @@ export function ActivityGrid({ onSelectActivity, className }: ActivityGridProps)
     setSelectedCostType,
     setSearchQuery,
     clearFilters,
-    addActivityToSchedule
+    addActivityWithTimePreference,
+    getScheduleForDay
   } = useWeekendStore();
 
   const filteredActivities = getFilteredActivities();
@@ -77,10 +81,20 @@ export function ActivityGrid({ onSelectActivity, className }: ActivityGridProps)
   };
 
   const handleAddToSchedule = (activity: Activity) => {
-    // For now, default to Saturday at 10:00 AM
-    // In a real implementation, this would open a time selection modal
-    addActivityToSchedule(activity, 'saturday', '10:00');
+    setSelectedActivityForScheduling(activity);
+    setShowDayModal(true);
   };
+
+  const handleScheduleWithTimePreference = (day: DayType, timePreference: TimePreference) => {
+    if (selectedActivityForScheduling) {
+      addActivityWithTimePreference(selectedActivityForScheduling, day, timePreference);
+      setSelectedActivityForScheduling(null);
+      setShowDayModal(false);
+    }
+  };
+
+  const saturdayActivities = getScheduleForDay('saturday');
+  const sundayActivities = getScheduleForDay('sunday');
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -295,6 +309,19 @@ export function ActivityGrid({ onSelectActivity, className }: ActivityGridProps)
           )}
         </motion.div>
       )}
+
+      {/* Enhanced Day & Time Selection Modal */}
+      <DaySelectionModal
+        isOpen={showDayModal}
+        onClose={() => {
+          setShowDayModal(false);
+          setSelectedActivityForScheduling(null);
+        }}
+        activity={selectedActivityForScheduling}
+        onSchedule={handleScheduleWithTimePreference}
+        saturdayCount={saturdayActivities.length}
+        sundayCount={sundayActivities.length}
+      />
     </div>
   );
 }

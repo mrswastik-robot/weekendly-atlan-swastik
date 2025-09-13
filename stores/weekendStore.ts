@@ -3,7 +3,35 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Activity, ScheduledActivity, WeekendPlan, BudgetPreset } from '@/types';
+import type { Activity, ScheduledActivity, WeekendPlan, BudgetPreset, TimePreference, TimeWindow, DayType } from '@/types';
+
+// Time window definitions
+export const TIME_WINDOWS: Record<TimePreference, TimeWindow> = {
+  morning: {
+    start: '09:00',
+    end: '12:00',
+    label: 'Morning',
+    icon: '🌅'
+  },
+  afternoon: {
+    start: '12:00',
+    end: '17:00',
+    label: 'Afternoon',
+    icon: '☀️'
+  },
+  evening: {
+    start: '17:00',
+    end: '21:00',
+    label: 'Evening',
+    icon: '🌆'
+  },
+  auto: {
+    start: '09:00',
+    end: '21:00',
+    label: 'Next Available',
+    icon: '⚡'
+  }
+};
 
 interface WeekendStore {
   // Core state
@@ -29,7 +57,8 @@ interface WeekendStore {
   
   // Actions - Schedule Management
   createNewPlan: (name: string, theme: string, totalBudget: number) => void;
-  addActivityToSchedule: (activity: Activity, day: 'saturday' | 'sunday', startTime: string) => void;
+  addActivityToSchedule: (activity: Activity, day: 'saturday' | 'sunday', startTime?: string) => void;
+  addActivityWithTimePreference: (activity: Activity, day: DayType, timePreference: TimePreference) => void;
   removeActivityFromSchedule: (activityId: string, day: 'saturday' | 'sunday') => void;
   moveActivity: (activityId: string, fromDay: 'saturday' | 'sunday', toDay: 'saturday' | 'sunday', newTime: string) => void;
   reorderActivities: (day: 'saturday' | 'sunday', activities: ScheduledActivity[]) => void;
@@ -57,6 +86,11 @@ interface WeekendStore {
   getTotalActualCost: () => number;
   getBudgetStatus: () => 'under' | 'near' | 'over';
   getScheduleForDay: (day: 'saturday' | 'sunday') => ScheduledActivity[];
+  getNextAvailableTime: (day: 'saturday' | 'sunday') => string;
+  
+  // Time management functions, next-level scheduling k liye
+  getOptimalTimeInWindow: (day: DayType, timePreference: TimePreference, activityDuration: number) => string;
+  findBestTimeSlot: (day: DayType, timeWindow: TimeWindow, activityDuration: number) => string;
 }
 
 const useWeekendStore = create<WeekendStore>()(
@@ -109,11 +143,41 @@ const useWeekendStore = create<WeekendStore>()(
         const state = get();
         if (!state.currentPlan) return;
 
-        const endTime = calculateEndTime(startTime, activity.duration);
+        // finding the next available slot
+        const finalStartTime = startTime || state.getNextAvailableTime(day);
+        const endTime = calculateEndTime(finalStartTime, activity.duration);
+        
         const scheduledActivity: ScheduledActivity = {
           ...activity,
+          id: `scheduled-${activity.id}-${Date.now()}`, // Generating unique ID for scheduled activities so that on dragging it, activity grid me motion na ho
           day,
-          startTime,
+          startTime: finalStartTime,
+          endTime
+        };
+
+        const updatedPlan = {
+          ...state.currentPlan,
+          [day]: [...state.currentPlan[day], scheduledActivity],
+          estimatedCost: state.currentPlan.estimatedCost + activity.cost,
+          updatedAt: new Date()
+        };
+
+        set({ currentPlan: updatedPlan });
+      },
+
+      addActivityWithTimePreference: (activity, day, timePreference) => {
+        const state = get();
+        if (!state.currentPlan) return;
+
+        // Get optimal time based on preference
+        const optimalTime = state.getOptimalTimeInWindow(day, timePreference, activity.duration);
+        const endTime = calculateEndTime(optimalTime, activity.duration);
+        
+        const scheduledActivity: ScheduledActivity = {
+          ...activity,
+          id: `scheduled-${activity.id}-${Date.now()}`,
+          day,
+          startTime: optimalTime,
           endTime
         };
 
@@ -151,11 +215,15 @@ const useWeekendStore = create<WeekendStore>()(
         const activity = state.currentPlan[fromDay].find(a => a.id === activityId);
         if (!activity) return;
 
+        // If no time provided, calculate next available time for the target day
+        const finalStartTime = newTime || state.getNextAvailableTime(toDay);
+
         const updatedActivity = {
           ...activity,
           day: toDay,
-          startTime: newTime,
-          endTime: calculateEndTime(newTime, activity.duration)
+          startTime: finalStartTime,
+          endTime: calculateEndTime(finalStartTime, activity.duration)
+          // Keep the same ID when moving between days
         };
 
         const updatedPlan = {
@@ -323,6 +391,114 @@ const useWeekendStore = create<WeekendStore>()(
         const state = get();
         if (!state.currentPlan) return [];
         return state.currentPlan[day].sort((a, b) => a.startTime.localeCompare(b.startTime));
+      },
+
+      getNextAvailableTime: (day) => {
+        const state = get();
+        if (!state.currentPlan) return '09:00'; // Default start time
+        
+        const dayActivities = state.currentPlan[day].sort((a, b) => a.startTime.localeCompare(b.startTime));
+        
+        // let's start at 9 AM if no activities
+        if (dayActivities.length === 0) {
+          return '09:00';
+        }
+        
+        // Find the end time of the last activity
+        const lastActivity = dayActivities[dayActivities.length - 1];
+        const lastEndTime = lastActivity.endTime;
+        
+        // Parse the time and add 30 minutes buffer
+        const [hours, minutes] = lastEndTime.split(':').map(Number);
+        const endDate = new Date();
+        endDate.setHours(hours, minutes, 0, 0);
+        
+        // Adding 30 minutes buffer between activities
+        const nextStartDate = new Date(endDate.getTime() + 30 * 60000);
+        
+        if (nextStartDate.getHours() >= 22) {
+          return '22:00';
+        }
+        
+        return `${nextStartDate.getHours().toString().padStart(2, '0')}:${nextStartDate.getMinutes().toString().padStart(2, '0')}`;
+      },
+
+      getOptimalTimeInWindow: (day, timePreference, activityDuration) => {
+        const state = get();
+        
+        if (timePreference === 'auto') {
+          return state.getNextAvailableTime(day);
+        }
+        
+        const timeWindow = TIME_WINDOWS[timePreference];
+        return state.findBestTimeSlot(day, timeWindow, activityDuration);
+      },
+
+      findBestTimeSlot: (day, timeWindow, activityDuration) => {
+        const state = get();
+        if (!state.currentPlan) return timeWindow.start;
+        
+        const dayActivities = state.currentPlan[day]
+          .sort((a, b) => a.startTime.localeCompare(b.startTime));
+        
+        // convert time string to minutes
+        const timeToMinutes = (time: string) => {
+          const [hours, minutes] = time.split(':').map(Number);
+          return hours * 60 + minutes;
+        };
+        
+        // convert minutes to time string
+        const minutesToTime = (minutes: number) => {
+          const hours = Math.floor(minutes / 60);
+          const mins = minutes % 60;
+          return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+        };
+        
+        const windowStart = timeToMinutes(timeWindow.start);
+        const windowEnd = timeToMinutes(timeWindow.end);
+        const neededDuration = activityDuration + 30; // Add 30min buffer
+        
+        // Find activities(of all the activity in the day) within the time window
+        const windowActivities = dayActivities.filter(activity => {
+          const activityStart = timeToMinutes(activity.startTime);
+          const activityEnd = timeToMinutes(activity.endTime);
+          return activityStart < windowEnd && activityEnd > windowStart;
+        });
+        
+        // If no activities in window, start at window beginning
+        if (windowActivities.length === 0) {
+          return timeWindow.start;
+        }
+        
+        // Check if we can fit at the beginning of the window
+        const firstActivity = windowActivities[0];
+        const firstActivityStart = timeToMinutes(firstActivity.startTime);
+        if (firstActivityStart - windowStart >= neededDuration) {
+          return timeWindow.start;
+        }
+        
+        // Check gaps between activities
+        for (let i = 0; i < windowActivities.length - 1; i++) {
+          const currentEnd = timeToMinutes(windowActivities[i].endTime);
+          const nextStart = timeToMinutes(windowActivities[i + 1].startTime);
+          const gapSize = nextStart - currentEnd;
+          
+          if (gapSize >= neededDuration) {
+            return minutesToTime(currentEnd + 30); // 30min buffer after previous activity
+          }
+        }
+        
+        // Check if we can fit after the last activity in window
+        const lastActivity = windowActivities[windowActivities.length - 1];
+        const lastActivityEnd = timeToMinutes(lastActivity.endTime);
+        const timeAfterLast = lastActivityEnd + 30; // 30min buffer
+        
+        if (timeAfterLast + activityDuration <= windowEnd) {
+          return minutesToTime(timeAfterLast);
+        }
+        
+        // If no space in preferred window, fall back to next available time
+        return state.getNextAvailableTime(day);
       }
     }),
     {
