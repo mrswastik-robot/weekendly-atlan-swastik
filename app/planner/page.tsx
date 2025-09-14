@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import { 
   DndContext, 
   DragEndEvent, 
@@ -19,6 +20,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ActivityGrid } from '@/components/activity/ActivityGrid';
 import { WeekendSchedule } from '@/components/schedule/WeekendSchedule';
@@ -238,12 +240,21 @@ export default function WeekendPlanner() {
             <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
               🌟 Budget Tracking Enabled
             </Badge>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-6xl mb-6">
+            {/* <h1 className="text-4xl font-bold tracking-tight sm:text-6xl mb-6">
               Plan Your Perfect{' '}
-              <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+              <span className="from-primary/10 via-foreground/85 to-foreground/50 bg-gradient-to-tl bg-clip-text text-center text-4xl tracking-tighter text-balance text-transparent sm:text-5xl md:text-6xl lg:text-7xl pb-1">
                 Weekend
               </span>
-            </h1>
+            </h1> */}
+
+            <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="from-primary/10 via-foreground/85 to-foreground/50 bg-gradient-to-tl bg-clip-text text-center text-4xl tracking-tighter text-balance text-transparent sm:text-5xl md:text-6xl lg:text-7xl pb-1"
+          >
+            Plan Your Perfect Weekend
+          </motion.h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
               Design your ideal weekend with smart budget tracking, mood-based activities, 
               and intuitive scheduling. Make every weekend memorable.
@@ -363,6 +374,23 @@ export default function WeekendPlanner() {
                             style={{ width: `${Math.min((totalCost / currentPlan.totalBudget) * 100, 100)}%` }}
                           ></div>
                         </div>
+                        
+                        {/* Timeline Generation Button */}
+                        {(saturdayActivities.length > 0 || sundayActivities.length > 0) && (
+                          <div className="pt-4 border-t">
+                            <Button 
+                              asChild 
+                              className="w-full" 
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Link href="/timeline">
+                                <Calendar className="h-4 w-4 mr-2" />
+                                Generate Timeline
+                              </Link>
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>

@@ -102,7 +102,7 @@ export default function LandingPage() {
                 <span className="from-primary via-primary/90 to-primary/80 absolute inset-0 z-0 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100"></span>
               </Button>
             </Link>
-
+            <Link href="https://github.com/mrswastik-robot/weekendly-atlan-swastik">
             <Button
               variant="outline"
               size="lg"
@@ -111,6 +111,7 @@ export default function LandingPage() {
               <Github className="h-4 w-4" />
               View Source
             </Button>
+            </Link>
           </motion.div>
 
           {/* Feature Preview */}
