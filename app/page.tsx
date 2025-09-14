@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, ChevronRight, Github, Calendar, DollarSign, Heart, Sparkles } from 'lucide-react';
+import { ArrowRight, ChevronRight, Github, DollarSign, Sparkles, Share2, Zap, MousePointer2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -70,16 +70,16 @@ export default function LandingPage() {
               Smart Budget Tracking
             </Badge>
             <Badge variant="outline" className="flex items-center gap-2 px-3 py-1">
-              <Heart className="h-4 w-4 text-red-600" />
-              Mood-Based Activities
+              <MousePointer2 className="h-4 w-4 text-blue-600" />
+              Drag & Drop Planning
             </Badge>
             <Badge variant="outline" className="flex items-center gap-2 px-3 py-1">
-              <Calendar className="h-4 w-4 text-blue-600" />
-              Visual Scheduling
+              <Share2 className="h-4 w-4 text-purple-600" />
+              Timeline & Export
             </Badge>
             <Badge variant="outline" className="flex items-center gap-2 px-3 py-1">
-              <Sparkles className="h-4 w-4 text-purple-600" />
-              40+ Activities
+              <Sparkles className="h-4 w-4 text-orange-600" />
+              59+ Activities
             </Badge>
           </motion.div>
 
@@ -146,16 +146,25 @@ export default function LandingPage() {
                     <h3 className="text-lg font-semibold mb-4">🎯 Browse Activities</h3>
                     <div className="grid grid-cols-2 gap-3">
                       {[
-                        { name: "Weekend Brunch", cost: "$25", category: "Food" },
-                        { name: "Nature Hiking", cost: "Free", category: "Outdoor" },
-                        { name: "Movie Marathon", cost: "$15", category: "Indoor" },
-                        { name: "Yoga Class", cost: "$18", category: "Wellness" }
+                        { name: "Wine & Cheese Tasting", cost: "$45", category: "Food", mood: "😌" },
+                        { name: "Geocaching Adventure", cost: "Free", category: "Outdoor", mood: "⚡" },
+                        { name: "VR Gaming", cost: "$25", category: "Indoor", mood: "🎮" },
+                        { name: "Sound Healing", cost: "$30", category: "Wellness", mood: "🧘" },
+                        { name: "Community Volunteer", cost: "Free", category: "Social", mood: "❤️" },
+                        { name: "Cold Water Therapy", cost: "$20", category: "Wellness", mood: "💪" }
                       ].map((activity, i) => (
-                        <Card key={i} className="hover:shadow-md transition-shadow">
-                          <CardContent className="p-3">
-                            <div className="text-sm font-medium">{activity.name}</div>
-                            <div className="text-xs text-muted-foreground">{activity.category}</div>
-                            <div className="text-sm font-medium text-green-600 mt-1">{activity.cost}</div>
+                        <Card key={i} className="hover:shadow-lg transition-all duration-300 hover:scale-105 border-2 hover:border-primary/20">
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="text-sm font-semibold">{activity.name}</div>
+                              <div className="text-lg">{activity.mood}</div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                                {activity.category}
+                              </Badge>
+                              <div className="text-sm font-bold text-green-600">{activity.cost}</div>
+                            </div>
                           </CardContent>
                         </Card>
                       ))}
@@ -165,32 +174,42 @@ export default function LandingPage() {
                   {/* Schedule Preview */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold mb-4">📅 Weekend Schedule</h3>
-                    <Card>
-                      <CardContent className="p-3">
-                        <div className="text-sm font-medium mb-2">Saturday</div>
+                    <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+                      <CardContent className="p-4">
+                        <div className="text-sm font-bold mb-3 text-blue-800">📅 Saturday Schedule</div>
                         <div className="space-y-2 text-xs">
-                          <div className="flex justify-between">
-                            <span>Brunch</span>
-                            <span className="text-green-600">$25</span>
+                          <div className="flex justify-between items-center p-2 bg-white/60 rounded-md">
+                            <span className="font-medium">Wine Tasting</span>
+                            <span className="text-blue-600 font-bold">$45</span>
                           </div>
-                          <div className="flex justify-between">
-                            <span>Hiking</span>
-                            <span className="text-green-600">Free</span>
+                          <div className="flex justify-between items-center p-2 bg-white/60 rounded-md">
+                            <span className="font-medium">VR Gaming</span>
+                            <span className="text-blue-600 font-bold">$25</span>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
-                    <Card>
-                      <CardContent className="p-3">
-                        <div className="text-sm font-medium mb-2">Budget Summary</div>
-                        <div className="space-y-1 text-xs">
+                    <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+                      <CardContent className="p-4">
+                        <div className="text-sm font-bold mb-3 text-green-800">💰 Budget Tracker</div>
+                        <div className="space-y-2 text-xs">
                           <div className="flex justify-between">
-                            <span>Total:</span>
-                            <span className="font-medium">$25</span>
+                            <span>Spent:</span>
+                            <span className="font-bold text-green-700">$70 / $150</span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-1.5">
-                            <div className="bg-green-500 h-1.5 rounded-full w-1/4"></div>
+                          <div className="w-full bg-green-200 rounded-full h-2">
+                            <div className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full w-[47%]"></div>
                           </div>
+                          <div className="text-center text-green-600 font-medium">✅ On Budget</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
+                      <CardContent className="p-4">
+                        <div className="text-sm font-bold mb-2 text-purple-800">🚀 Timeline Ready</div>
+                        <div className="flex items-center justify-center space-x-2 text-xs">
+                          <Share2 className="h-3 w-3 text-purple-600" />
+                          <span className="text-purple-700 font-medium">Export & Share</span>
                         </div>
                       </CardContent>
                     </Card>
@@ -220,22 +239,22 @@ export default function LandingPage() {
               {
                 icon: <DollarSign className="h-8 w-8 text-green-600" />,
                 title: "Smart Budget Tracking",
-                description: "Track costs in real-time with visual budget indicators and spending alerts."
+                description: "Real-time cost tracking with visual progress bars, budget alerts, and spending analytics."
               },
               {
-                icon: <Heart className="h-8 w-8 text-red-600" />,
-                title: "Mood-Based Planning",
-                description: "Filter activities by mood - happy, relaxed, energetic, or peaceful."
+                icon: <MousePointer2 className="h-8 w-8 text-blue-600" />,
+                title: "Professional Drag & Drop",
+                description: "Advanced @dnd-kit integration with cross-day dragging, mobile touch support, and accessibility."
               },
               {
-                icon: <Calendar className="h-8 w-8 text-blue-600" />,
-                title: "Visual Scheduling",
-                description: "Drag and drop activities into your weekend timeline with time management."
+                icon: <Share2 className="h-8 w-8 text-purple-600" />,
+                title: "Timeline Generation & Export",
+                description: "Create beautiful shareable timelines with PNG, PDF, clipboard export and social sharing."
               },
               {
-                icon: <Sparkles className="h-8 w-8 text-purple-600" />,
-                title: "40+ Activities",
-                description: "Curated collection of weekend activities across food, outdoor, indoor, social, and wellness."
+                icon: <Zap className="h-8 w-8 text-orange-600" />,
+                title: "59+ Activities & Performance",
+                description: "Extensive activity collection with 60fps smooth performance, smart time management, and persistence."
               }
             ].map((feature, i) => (
               <Card key={i} className="text-center p-6 hover:shadow-lg transition-shadow">

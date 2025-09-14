@@ -21,6 +21,7 @@ import {
   WhatsappShareButton,
   EmailShareButton,
   LinkedinShareButton,
+  XIcon
 } from 'react-share';
 
 interface ShareOptionsProps {
@@ -70,8 +71,8 @@ export function ShareOptions({ planId, timelineImageUrl }: ShareOptionsProps) {
       }
     },
     {
-      name: 'Twitter',
-      icon: Twitter,
+      name: 'X',
+      icon: XIcon,
       color: 'hover:bg-blue-50 hover:text-blue-400',
       component: TwitterShareButton,
       props: {

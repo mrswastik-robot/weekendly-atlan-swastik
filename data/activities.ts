@@ -1,4 +1,4 @@
-// Weekendly - Activity Database
+// Activity Database 
 
 import type { Activity } from '@/types';
 
@@ -572,6 +572,211 @@ export const activities: Activity[] = [
     cost: 10,
     costType: 'free',
     costVariability: 'variable'
+  },
+
+  // EXTENDED FOOD ACTIVITIES (50+ Scale Test)
+  {
+    id: 'food-09',
+    name: 'Wine & Cheese Tasting',
+    category: 'food',
+    duration: 150,
+    mood: 'relaxed',
+    icon: 'Wine',
+    color: '#F59E0B',
+    description: 'Sample different wines paired with artisanal cheeses',
+    cost: 45,
+    costType: 'high',
+    costVariability: 'variable'
+  },
+  {
+    id: 'food-10',
+    name: 'Vegan Cooking Class',
+    category: 'food',
+    duration: 180,
+    mood: 'happy',
+    icon: 'Leaf',
+    color: '#F59E0B',
+    description: 'Learn to prepare delicious plant-based meals',
+    cost: 35,
+    costType: 'medium',
+    costVariability: 'fixed'
+  },
+  {
+    id: 'food-11',
+    name: 'Street Food Tour',
+    category: 'food',
+    duration: 210,
+    mood: 'energetic',
+    icon: 'Truck',
+    color: '#F59E0B',
+    description: 'Explore local street food vendors and hidden gems',
+    cost: 30,
+    costType: 'medium',
+    costVariability: 'variable'
+  },
+
+  // EXTENDED OUTDOOR ACTIVITIES
+  {
+    id: 'outdoor-09',
+    name: 'Geocaching Adventure',
+    category: 'outdoor',
+    duration: 180,
+    mood: 'energetic',
+    icon: 'MapPin',
+    color: '#10B981',
+    description: 'Modern treasure hunting using GPS coordinates',
+    cost: 0,
+    costType: 'free',
+    costVariability: 'fixed'
+  },
+  {
+    id: 'outdoor-10',
+    name: 'Outdoor Rock Climbing',
+    category: 'outdoor',
+    duration: 240,
+    mood: 'energetic',
+    icon: 'Mountain',
+    color: '#10B981',
+    description: 'Challenge yourself with natural rock formations',
+    cost: 65,
+    costType: 'high',
+    costVariability: 'fixed'
+  },
+  {
+    id: 'outdoor-11',
+    name: 'Birdwatching Expedition',
+    category: 'outdoor',
+    duration: 180,
+    mood: 'peaceful',
+    icon: 'Bird',
+    color: '#10B981',
+    description: 'Observe and identify local bird species in their habitat',
+    cost: 15,
+    costType: 'low',
+    costVariability: 'variable'
+  },
+
+  // EXTENDED INDOOR ACTIVITIES
+  {
+    id: 'indoor-09',
+    name: 'Virtual Reality Gaming',
+    category: 'indoor',
+    duration: 120,
+    mood: 'energetic',
+    icon: 'Gamepad2',
+    color: '#8B5CF6',
+    description: 'Experience immersive virtual worlds and games',
+    cost: 25,
+    costType: 'medium',
+    costVariability: 'fixed'
+  },
+  {
+    id: 'indoor-10',
+    name: 'Pottery Making Class',
+    category: 'indoor',
+    duration: 150,
+    mood: 'relaxed',
+    icon: 'Palette',
+    color: '#8B5CF6',
+    description: 'Shape clay into beautiful ceramic pieces',
+    cost: 40,
+    costType: 'medium',
+    costVariability: 'fixed'
+  },
+  {
+    id: 'indoor-11',
+    name: 'Home Brewery Tour',
+    category: 'indoor',
+    duration: 120,
+    mood: 'happy',
+    icon: 'Beer',
+    color: '#8B5CF6',
+    description: 'Learn about craft brewing process and taste samples',
+    cost: 20,
+    costType: 'low',
+    costVariability: 'variable'
+  },
+
+  // EXTENDED SOCIAL ACTIVITIES
+  {
+    id: 'social-09',
+    name: 'Community Volunteer Work',
+    category: 'social',
+    duration: 240,
+    mood: 'happy',
+    icon: 'Heart',
+    color: '#F472B6',
+    description: 'Give back to community through volunteer activities',
+    cost: 0,
+    costType: 'free',
+    costVariability: 'fixed'
+  },
+  {
+    id: 'social-10',
+    name: 'Speed Networking Event',
+    category: 'social',
+    duration: 120,
+    mood: 'energetic',
+    icon: 'Users',
+    color: '#F472B6',
+    description: 'Meet new professional contacts in a structured setting',
+    cost: 15,
+    costType: 'low',
+    costVariability: 'fixed'
+  },
+  {
+    id: 'social-11',
+    name: 'Book Club Meeting',
+    category: 'social',
+    duration: 120,
+    mood: 'relaxed',
+    icon: 'BookOpen',
+    color: '#F472B6',
+    description: 'Discuss literature with fellow book enthusiasts',
+    cost: 5,
+    costType: 'free',
+    costVariability: 'variable'
+  },
+
+  // EXTENDED WELLNESS ACTIVITIES
+  {
+    id: 'wellness-09',
+    name: 'Sound Healing Session',
+    category: 'wellness',
+    duration: 90,
+    mood: 'peaceful',
+    icon: 'Music',
+    color: '#06B6D4',
+    description: 'Experience therapeutic vibrations and healing sounds',
+    cost: 30,
+    costType: 'medium',
+    costVariability: 'fixed'
+  },
+  {
+    id: 'wellness-10',
+    name: 'Cold Water Therapy',
+    category: 'wellness',
+    duration: 60,
+    mood: 'energetic',
+    icon: 'Waves',
+    color: '#06B6D4',
+    description: 'Boost immunity and energy with controlled cold exposure',
+    cost: 20,
+    costType: 'low',
+    costVariability: 'fixed'
+  },
+  {
+    id: 'wellness-11',
+    name: 'Breathwork Workshop',
+    category: 'wellness',
+    duration: 90,
+    mood: 'peaceful',
+    icon: 'Wind',
+    color: '#06B6D4',
+    description: 'Learn powerful breathing techniques for wellness',
+    cost: 25,
+    costType: 'medium',
+    costVariability: 'fixed'
   }
 ];
 

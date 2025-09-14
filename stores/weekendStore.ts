@@ -50,6 +50,10 @@ interface WeekendStore {
   budgetAlerts: boolean;
   showBudgetBreakdown: boolean;
   
+  // Persistence state
+  _hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
+  
   // Actions - Activities
   setActivities: (activities: Activity[]) => void;
   addActivity: (activity: Activity) => void;
@@ -107,6 +111,10 @@ const useWeekendStore = create<WeekendStore>()(
       searchQuery: '',
       budgetAlerts: true,
       showBudgetBreakdown: false,
+      
+      // Persistence state
+      _hasHydrated: false,
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
 
       // Activities actions
       setActivities: (activities) => set({ activities }),
@@ -506,10 +514,15 @@ const useWeekendStore = create<WeekendStore>()(
       // Only persist essential data, not UI state
       partialize: (state) => ({
         activities: state.activities,
+        currentPlan: state.currentPlan,
         savedPlans: state.savedPlans,
         budgetPresets: state.budgetPresets,
         budgetAlerts: state.budgetAlerts
-      })
+      }),
+      onRehydrateStorage: () => (state) => {
+        // Mark as hydrated when persistence is complete
+        state?.setHasHydrated(true);
+      }
     }
   )
 );

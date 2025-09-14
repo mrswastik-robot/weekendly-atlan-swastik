@@ -1,9 +1,6 @@
 import * as htmlToImage from 'html-to-image';
 import jsPDF from 'jspdf';
 
-/**
- * Preprocess CSS to handle problematic color functions and variables
- */
 function preprocessElementForExport(element: HTMLElement): () => void {
   const originalStyles = new Map<HTMLElement, string>();
   const elementsToProcess = [element, ...Array.from(element.querySelectorAll('*'))] as HTMLElement[];
@@ -11,26 +8,21 @@ function preprocessElementForExport(element: HTMLElement): () => void {
   elementsToProcess.forEach(el => {
     originalStyles.set(el, el.style.cssText);
     
-    // Get computed styles to resolve CSS variables
     const computedStyle = window.getComputedStyle(el);
     
-    // Override problematic properties with computed values
     el.style.backgroundColor = computedStyle.backgroundColor;
     el.style.color = computedStyle.color;
     el.style.borderColor = computedStyle.borderColor;
     el.style.boxShadow = computedStyle.boxShadow;
     
-    // Force standard color formats and remove modern CSS functions
     (['backgroundColor', 'color', 'borderColor'] as const).forEach(prop => {
       const value = el.style[prop];
       if (value && (value.includes('lab(') || value.includes('oklch(') || value.includes('var('))) {
-        // Use computed value which should be resolved to rgb/rgba
         el.style[prop] = computedStyle[prop];
       }
     });
   });
   
-  // Return cleanup function
   return () => {
     elementsToProcess.forEach(el => {
       const original = originalStyles.get(el);
@@ -41,9 +33,6 @@ function preprocessElementForExport(element: HTMLElement): () => void {
   };
 }
 
-/**
- * Export timeline as PNG or JPG image using html-to-image
- */
 export async function exportTimelineAsImage(
   elementId: string, 
   filename: string = 'weekend-timeline',
@@ -55,13 +44,10 @@ export async function exportTimelineAsImage(
   }
 
   try {
-    // Preprocess CSS to fix color issues
     const cleanup = preprocessElementForExport(element);
     
-    // Force a repaint to ensure styles are applied
     void element.offsetHeight;
     
-    // Small delay to ensure all styles are computed
     await new Promise(resolve => setTimeout(resolve, 100));
 
     // Use html-to-image which handles modern CSS better
@@ -83,7 +69,6 @@ export async function exportTimelineAsImage(
           }
         });
 
-    // Clean up styles
     cleanup();
 
     // Download the image
@@ -99,9 +84,6 @@ export async function exportTimelineAsImage(
   }
 }
 
-/**
- * Export timeline as PDF document using html-to-image
- */
 export async function exportTimelineAsPDF(
   elementId: string, 
   filename: string = 'weekend-timeline'
@@ -112,13 +94,10 @@ export async function exportTimelineAsPDF(
   }
 
   try {
-    // Preprocess CSS to fix color issues
     const cleanup = preprocessElementForExport(element);
     
-    // Force a repaint to ensure styles are applied
     void element.offsetHeight;
     
-    // Small delay to ensure all styles are computed
     await new Promise(resolve => setTimeout(resolve, 100));
 
     // Generate high-quality image for PDF
@@ -131,7 +110,6 @@ export async function exportTimelineAsPDF(
       }
     });
 
-    // Clean up styles
     cleanup();
 
     // Convert to PDF
@@ -167,22 +145,17 @@ export async function exportTimelineAsPDF(
   }
 }
 
-/**
- * Copy timeline image to clipboard using html-to-image
- */
 export async function copyTimelineToClipboard(elementId: string): Promise<void> {
   const element = document.getElementById(elementId);
   if (!element) {
     throw new Error('Timeline element not found');
   }
 
-  // Check if clipboard API is supported
   if (!navigator.clipboard || !navigator.clipboard.write) {
     throw new Error('Clipboard API not supported in this browser');
   }
 
   try {
-    // Preprocess CSS to fix color issues
     const cleanup = preprocessElementForExport(element);
     
     // Force a repaint
@@ -198,7 +171,6 @@ export async function copyTimelineToClipboard(elementId: string): Promise<void> 
       }
     });
 
-    // Clean up styles
     cleanup();
 
     // Convert data URL to blob
@@ -225,7 +197,6 @@ export async function generateShareableImageUrl(elementId: string): Promise<stri
   }
 
   try {
-    // Preprocess CSS to fix color issues
     const cleanup = preprocessElementForExport(element);
     
     // Force a repaint
@@ -241,7 +212,6 @@ export async function generateShareableImageUrl(elementId: string): Promise<stri
       }
     });
 
-    // Clean up styles
     cleanup();
 
     // Convert to blob URL for sharing

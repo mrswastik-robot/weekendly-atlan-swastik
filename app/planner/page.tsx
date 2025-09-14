@@ -25,13 +25,18 @@ import { Badge } from '@/components/ui/badge';
 import { ActivityGrid } from '@/components/activity/ActivityGrid';
 import { WeekendSchedule } from '@/components/schedule/WeekendSchedule';
 import { ActivityCard } from '@/components/activity/ActivityCard';
+import { PlanSetupModal } from '@/components/onboarding/PlanSetupModal';
 import useWeekendStore from '@/stores/weekendStore';
 import activities from '@/data/activities';
+import { getThemeConfig, getThemeSpecificActivities } from '@/utils/themeConfig';
+import { useToast } from '@/hooks/use-toast';
 import type { Activity, ScheduledActivity } from '@/types';
 
 export default function WeekendPlanner() {
   const [mounted, setMounted] = useState(false);
   const [draggedItem, setDraggedItem] = useState<Activity | ScheduledActivity | null>(null);
+  const [showSetupModal, setShowSetupModal] = useState(false);
+  const { toast } = useToast();
   
   // Configure sensors for drag and drop
   const sensors = useSensors(
@@ -48,6 +53,7 @@ export default function WeekendPlanner() {
     setActivities, 
     createNewPlan, 
     currentPlan,
+    _hasHydrated,
     getTotalEstimatedCost,
     getBudgetStatus,
     getScheduleForDay,
@@ -61,12 +67,40 @@ export default function WeekendPlanner() {
     setMounted(true);
     // Initialize activities on first load
     setActivities(activities);
-    
-    // Create a sample plan if none exists
+  }, [setActivities]);
+
+  // first let's try to restore from localstorage, if not then create a new plan
+  useEffect(() => {
+    if (_hasHydrated && mounted && !currentPlan) {
+      setShowSetupModal(true);
+    }
+  }, [_hasHydrated, mounted, currentPlan]);
+
+  const handlePlanSetup = (setupData: { planName: string; budget: number; theme: string }) => {
+    createNewPlan(setupData.planName, setupData.theme, setupData.budget);
+    setShowSetupModal(false);
+  };
+
+  const handleModalClose = () => {
+    // default plan if user dismisses modal without completing setup
     if (!currentPlan) {
       createNewPlan('My Weekend Plan', 'balanced', 150);
+      toast({
+        title: "Default Plan Created! 📅",
+        description: "We've set up a $150 budget weekend plan for you. You can customize it anytime!",
+      });
     }
-  }, [setActivities, createNewPlan, currentPlan]);
+    setShowSetupModal(false);
+  };
+
+  // Update document title with plan name
+  useEffect(() => {
+    if (currentPlan) {
+      document.title = `${currentPlan.name} | Weekendly`;
+    } else {
+      document.title = 'Weekend Planner | Weekendly';
+    }
+  }, [currentPlan]);
 
   if (!mounted) {
     return <div>Loading...</div>;
@@ -77,6 +111,10 @@ export default function WeekendPlanner() {
   const totalCost = getTotalEstimatedCost();
   const budgetStatus = getBudgetStatus();
 
+  const themeConfig = currentPlan ? getThemeConfig(currentPlan.theme) : getThemeConfig('balanced');
+  const themedActivities = currentPlan ? getThemeSpecificActivities(currentPlan.theme, activities) : [];
+  const planName = currentPlan?.name || 'Your Weekend Plan';
+
   // Handle drag and drop across the entire planner
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -84,7 +122,6 @@ export default function WeekendPlanner() {
     
     console.log('Drag Start - Active ID:', activeId); // Debug log
     
-    // Check if it's a scheduled activity (they have 'scheduled-' prefix)
     if (activeId.startsWith('scheduled-')) {
       const scheduledActivity = [...saturdayActivities, ...sundayActivities].find(
         a => a.id === activeId
@@ -105,7 +142,6 @@ export default function WeekendPlanner() {
     }
   };
 
-  // Helper function to recalculate activity times in order
   const recalculateActivityTimes = (activities: ScheduledActivity[]): ScheduledActivity[] => {
     if (activities.length === 0) return activities;
     
@@ -144,7 +180,6 @@ export default function WeekendPlanner() {
 
     console.log('Global Drag End:', { activeId, overId, draggedItem });
 
-    // Check if dragging from ActivityGrid to schedule
     const isFromActivityGrid = !activeId.startsWith('scheduled-');
     
     if (isFromActivityGrid) {
@@ -182,7 +217,6 @@ export default function WeekendPlanner() {
         );
         
         if (targetActivity && targetActivity.day === fromDay && activeId !== overId) {
-          // Reordering within same day
           console.log('Reordering within day:', fromDay, 'from', activeId, 'to', overId);
           const dayActivities = fromDay === 'saturday' ? saturdayActivities : sundayActivities;
           const oldIndex = dayActivities.findIndex(a => a.id === activeId);
@@ -195,14 +229,12 @@ export default function WeekendPlanner() {
             console.log('Performing reorder - before:', dayActivities.map(a => a.id));
             console.log('Performing reorder - after:', reorderedActivities.map(a => a.id));
             
-            // Recalculate times based on new order
             const recalculatedActivities = recalculateActivityTimes(reorderedActivities);
             console.log('Recalculated times:', recalculatedActivities.map(a => ({ id: a.id, time: a.startTime })));
             
             reorderActivities(fromDay, recalculatedActivities);
           }
         } else if (targetActivity && targetActivity.day !== fromDay) {
-          // Moving to different day via activity - use next available time
           console.log('Moving to different day via activity:', fromDay, '->', targetActivity.day);
           const nextTime = getNextAvailableTime(targetActivity.day);
           moveActivity(activeId, fromDay, targetActivity.day, nextTime);
@@ -222,44 +254,105 @@ export default function WeekendPlanner() {
   };
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={rectIntersection}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
+    <>
+      {/* Plan Setup Modal */}
+      <PlanSetupModal
+        isOpen={showSetupModal}
+        onComplete={handlePlanSetup}
+        onClose={handleModalClose}
+      />
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={rectIntersection}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
       {/* Hero Section */}
       <div className="relative">
+        {/* Dynamic theme-based background */}
+        <div 
+          className="absolute inset-0 opacity-30"
+          style={{ background: themeConfig.backgroundStyle }}
+        />
         
-        <div className="container mx-auto px-4 py-16">
+        <div className="container mx-auto px-4 py-16 relative">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-12"
           >
-            <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
-              🌟 Budget Tracking Enabled
+            <Badge className={`mb-4 ${themeConfig.colors.badge}`}>
+              {themeConfig.emoji} {themeConfig.name} Mode
             </Badge>
-            {/* <h1 className="text-4xl font-bold tracking-tight sm:text-6xl mb-6">
-              Plan Your Perfect{' '}
-              <span className="from-primary/10 via-foreground/85 to-foreground/50 bg-gradient-to-tl bg-clip-text text-center text-4xl tracking-tighter text-balance text-transparent sm:text-5xl md:text-6xl lg:text-7xl pb-1">
-                Weekend
-              </span>
-            </h1> */}
 
             <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="from-primary/10 via-foreground/85 to-foreground/50 bg-gradient-to-tl bg-clip-text text-center text-4xl tracking-tighter text-balance text-transparent sm:text-5xl md:text-6xl lg:text-7xl pb-1"
-          >
-            Plan Your Perfect Weekend
-          </motion.h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-              Design your ideal weekend with smart budget tracking, mood-based activities, 
-              and intuitive scheduling. Make every weekend memorable.
-            </p>
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className={`bg-gradient-to-r ${themeConfig.colors.primary} bg-clip-text text-center text-4xl tracking-tighter text-balance text-transparent sm:text-5xl md:text-6xl lg:text-7xl pb-1`}
+            >
+              {planName}
+            </motion.h1>
+            
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="text-xl text-muted-foreground max-w-2xl mx-auto mb-6"
+            >
+              {themeConfig.personality.greeting}
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className={`${themeConfig.colors.accent} rounded-lg p-4 max-w-lg mx-auto`}
+            >
+              <p className="text-sm font-medium">
+                {themeConfig.personality.motivation}
+              </p>
+            </motion.div>
           </motion.div>
+
+          {/* Theme-Specific Activity Recommendations */}
+          {currentPlan && themedActivities.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="mb-12"
+            >
+              <Card className={`${themeConfig.colors.gradient} border-2 ${themeConfig.colors.accent.split(' ')[0]}`}>
+                <CardHeader className="text-center pb-4">
+                  <CardTitle className="flex items-center justify-center gap-2 text-lg">
+                    <span className="text-2xl">{themeConfig.emoji}</span>
+                    {themeConfig.personality.activityPrompt}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                    {themedActivities.map((activity, index) => (
+                      <motion.div
+                        key={activity.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.5 + index * 0.1 }}
+                      >
+                        <ActivityCard
+                          activity={activity}
+                          onAddToSchedule={(activity) => addActivityToSchedule(activity, 'saturday')}
+                          showAddButton={true}
+                          isDraggable={true}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
 
           {/* Quick Stats */}
           {currentPlan && (
@@ -293,10 +386,13 @@ export default function WeekendPlanner() {
                 </CardContent>
               </Card>
               
-              <Card>
+              <Card className={`${themeConfig.colors.secondary} border-2 ${themeConfig.colors.accent.split(' ')[0]}`}>
                 <CardContent className="p-4 text-center">
-                  <div className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${budgetStatusConfig[budgetStatus].color}`}>
+                  <div className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${budgetStatusConfig[budgetStatus].color} mb-2`}>
                     {budgetStatusConfig[budgetStatus].label}
+                  </div>
+                  <div className="text-xs text-muted-foreground italic">
+                    {themeConfig.personality.budgetTip}
                   </div>
                 </CardContent>
               </Card>
@@ -426,5 +522,6 @@ export default function WeekendPlanner() {
         )}
       </DragOverlay>
     </DndContext>
+    </>
   );
 }
